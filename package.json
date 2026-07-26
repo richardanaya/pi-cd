@@ -1,22 +1,20 @@
 {
   "name": "pi-cd",
-  "version": "0.0.1",
-  "description": "Change pi's working directory with /cd — path autocomplete, interactive browser, and recent destinations.",
-  "author": {
-    "name": "Richard Anaya",
-    "url": "https://github.com/richardanaya"
-  },
+  "version": "0.1.0",
+  "description": "A pi extension that changes pi's working directory with /cd — path autocomplete, interactive browser, and recent destinations",
   "license": "MIT",
+  "author": "Richard Anaya <richard.anaya@gmail.com>",
   "type": "module",
-  "keywords": [
-    "pi-package",
-    "pi-extension",
-    "pi",
-    "pi-coding-agent",
-    "cd",
-    "cwd",
-    "directory"
+  "main": "index.ts",
+  "types": "index.ts",
+  "files": [
+    "index.ts",
+    "README.md",
+    "LICENSE"
   ],
+  "scripts": {
+    "prepublishOnly": "node --input-type=module -e \"import fs from 'node:fs'; fs.accessSync('index.ts')\""
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/richardanaya/pi-cd.git"
@@ -25,33 +23,30 @@
     "url": "https://github.com/richardanaya/pi-cd/issues"
   },
   "homepage": "https://github.com/richardanaya/pi-cd#readme",
-  "engines": {
-    "node": ">=20"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "files": [
-    "extensions",
-    "LICENSE",
-    "README.md",
-    "package.json"
-  ],
   "pi": {
     "extensions": [
-      "./extensions"
+      "./index.ts"
     ]
   },
-  "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*",
-    "@earendil-works/pi-tui": "*"
-  },
   "devDependencies": {
-    "@types/node": "^22.13.10",
-    "typescript": "^5.8.2"
+    "@earendil-works/pi-coding-agent": "^0.82.1",
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
   },
-  "scripts": {
-    "check": "tsc --noEmit",
-    "prepublishOnly": "npm run check"
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pi",
+    "cli",
+    "tui",
+    "cd",
+    "cwd",
+    "directory"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

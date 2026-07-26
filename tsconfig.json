@@ -13,5 +13,5 @@
       ]
     }
   },
-  "include": ["extensions/**/*.ts"]
+  "include": ["index.ts"]
 }
