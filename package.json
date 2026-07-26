@@ -1,0 +1,57 @@
+{
+  "name": "pi-cd",
+  "version": "1.0.0",
+  "description": "Change pi's working directory with /cd — path autocomplete, interactive browser, and recent destinations.",
+  "author": {
+    "name": "Richard Anaya",
+    "url": "https://github.com/richardanaya"
+  },
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pi",
+    "pi-coding-agent",
+    "cd",
+    "cwd",
+    "directory"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/richardanaya/pi-cd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/richardanaya/pi-cd/issues"
+  },
+  "homepage": "https://github.com/richardanaya/pi-cd#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "extensions",
+    "LICENSE",
+    "README.md",
+    "package.json"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "prepublishOnly": "npm run check"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@earendil-works/pi-tui": [
+        "./node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-tui"
+      ]
+    }
+  },
+  "include": ["extensions/**/*.ts"]
+}
