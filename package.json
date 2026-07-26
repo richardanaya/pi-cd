@@ -1,6 +1,6 @@
 {
   "name": "pi-cd",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Change pi's working directory with /cd — path autocomplete, interactive browser, and recent destinations.",
   "author": {
     "name": "Richard Anaya",

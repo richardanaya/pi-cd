@@ -66,7 +66,9 @@ type ParsedArgs =
 function loadState(): CdState {
 	try {
 		if (!existsSync(STATE_PATH)) return { recents: [] };
-		const raw = JSON.parse(readFileSync(STATE_PATH, "utf8")) as Partial<CdState>;
+		const raw = JSON.parse(
+			readFileSync(STATE_PATH, "utf8"),
+		) as Partial<CdState>;
 		return {
 			previous: typeof raw.previous === "string" ? raw.previous : undefined,
 			recents: Array.isArray(raw.recents)
@@ -254,14 +256,25 @@ function helpText(): string {
 	].join("\n");
 }
 
-function completionItemsForPrefix(cwd: string, prefix: string): AutocompleteItem[] {
+function completionItemsForPrefix(
+	cwd: string,
+	prefix: string,
+): AutocompleteItem[] {
 	const specials: AutocompleteItem[] = [
 		{ value: "-", label: "-", description: "previous directory" },
 		{ value: "~", label: "~", description: "home" },
 		{ value: "..", label: "..", description: "parent" },
-		{ value: "--new", label: "--new", description: "fresh session (no history)" },
+		{
+			value: "--new",
+			label: "--new",
+			description: "fresh session (no history)",
+		},
 		{ value: "-n", label: "-n", description: "fresh session (no history)" },
-		{ value: "--recents", label: "--recents", description: "pick from recents" },
+		{
+			value: "--recents",
+			label: "--recents",
+			description: "pick from recents",
+		},
 		{ value: "--help", label: "--help", description: "usage" },
 	];
 
@@ -270,7 +283,12 @@ function completionItemsForPrefix(cwd: string, prefix: string): AutocompleteItem
 
 	// Specials / flags when the token looks like a flag or is empty / short special
 	const wantsSpecials =
-		!p || p.startsWith("-") || p === "~" || p === "." || p === ".." || (!p.includes("/") && !p.includes(sep));
+		!p ||
+		p.startsWith("-") ||
+		p === "~" ||
+		p === "." ||
+		p === ".." ||
+		(!p.includes("/") && !p.includes(sep));
 	if (wantsSpecials) {
 		for (const s of specials) {
 			if (!p || s.value.startsWith(p) || s.label.startsWith(p)) items.push(s);
@@ -282,7 +300,11 @@ function completionItemsForPrefix(cwd: string, prefix: string): AutocompleteItem
 		const state = loadState();
 		for (const r of state.recents) {
 			const d = displayPath(r);
-			if (!p || d.includes(p) || basename(r).toLowerCase().startsWith(p.toLowerCase())) {
+			if (
+				!p ||
+				d.includes(p) ||
+				basename(r).toLowerCase().startsWith(p.toLowerCase())
+			) {
 				items.push({
 					value: d.startsWith("~") ? d : r,
 					label: d,
@@ -332,7 +354,10 @@ function completionItemsForPrefix(cwd: string, prefix: string): AutocompleteItem
 					const full = join(dirToList, name);
 					items.push({
 						value,
-						label: value.startsWith("~") || isAbsolute(value) ? displayPath(full) + "/" : value,
+						label:
+							value.startsWith("~") || isAbsolute(value)
+								? displayPath(full) + "/"
+								: value,
 						description: "directory",
 					});
 				}
@@ -373,21 +398,36 @@ async function pickFromList(
 
 	return ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
 		const container = new Container();
-		container.addChild(new DynamicBorder((str: string) => theme.fg("accent", str)));
+		container.addChild(
+			new DynamicBorder((str: string) => theme.fg("accent", str)),
+		);
 		container.addChild(new Text(theme.fg("accent", theme.bold(title))));
 
-		const selectList = new SelectList(items, Math.min(Math.max(items.length, 1), 12), {
-			selectedPrefix: (text: string) => theme.fg("accent", text),
-			selectedText: (text: string) => theme.fg("accent", text),
-			description: (text: string) => theme.fg("muted", text),
-			scrollInfo: (text: string) => theme.fg("dim", text),
-			noMatch: (text: string) => theme.fg("warning", text),
-		});
+		const selectList = new SelectList(
+			items,
+			Math.min(Math.max(items.length, 1), 12),
+			{
+				selectedPrefix: (text: string) => theme.fg("accent", text),
+				selectedText: (text: string) => theme.fg("accent", text),
+				description: (text: string) => theme.fg("muted", text),
+				scrollInfo: (text: string) => theme.fg("dim", text),
+				noMatch: (text: string) => theme.fg("warning", text),
+			},
+		);
 		selectList.onSelect = (item) => done(item.value);
 		selectList.onCancel = () => done(null);
 		container.addChild(selectList);
-		container.addChild(new Text(theme.fg("dim", "↑↓ navigate · type to filter · enter select · esc cancel")));
-		container.addChild(new DynamicBorder((str: string) => theme.fg("accent", str)));
+		container.addChild(
+			new Text(
+				theme.fg(
+					"dim",
+					"↑↓ navigate · type to filter · enter select · esc cancel",
+				),
+			),
+		);
+		container.addChild(
+			new DynamicBorder((str: string) => theme.fg("accent", str)),
+		);
 
 		return {
 			render(width: number) {
@@ -422,7 +462,11 @@ async function browseDirectory(
 		let current = safeRealpath(startDir);
 		for (;;) {
 			const entries: SelectItem[] = [
-				{ value: "__use__", label: `✓ Use this directory`, description: displayPath(current) },
+				{
+					value: "__use__",
+					label: `✓ Use this directory`,
+					description: displayPath(current),
+				},
 				{ value: "__up__", label: "..", description: "parent" },
 			];
 			for (const name of listSubdirs(current)) {
@@ -435,7 +479,10 @@ async function browseDirectory(
 			const labels = entries.map((e) =>
 				e.description ? `${e.label}  ${e.description}` : e.label,
 			);
-			const chosen = await ctx.ui.select(`cd · ${displayPath(current)}`, labels);
+			const chosen = await ctx.ui.select(
+				`cd · ${displayPath(current)}`,
+				labels,
+			);
 			if (!chosen) return null;
 			const idx = labels.indexOf(chosen);
 			if (idx < 0) return null;
@@ -469,7 +516,9 @@ async function browseDirectory(
 					});
 				}
 				// Recents that are under or near — show a few at top when at start
-				const recents = loadState().recents.filter((r) => r !== current).slice(0, 5);
+				const recents = loadState()
+					.recents.filter((r) => r !== current)
+					.slice(0, 5);
 				for (const r of recents) {
 					items.push({
 						value: `__recent__:${r}`,
@@ -524,21 +573,28 @@ async function browseDirectory(
 					return;
 				}
 				if (item.value.startsWith("__recent__:")) {
-					done({ type: "navigate", path: item.value.slice("__recent__:".length) });
+					done({
+						type: "navigate",
+						path: item.value.slice("__recent__:".length),
+					});
 					return;
 				}
 				done({ type: "navigate", path: item.value });
 			};
 			selectList.onCancel = () => done({ type: "cancel" });
 
-			container.addChild(new DynamicBorder((str: string) => theme.fg("accent", str)));
+			container.addChild(
+				new DynamicBorder((str: string) => theme.fg("accent", str)),
+			);
 			container.addChild(header);
 			container.addChild(
 				new Text(
 					theme.fg(
 						"dim",
 						`from ${displayPath(ctx.cwd)}` +
-							(current !== ctx.cwd ? `  ·  Δ ${displayPath(relative(ctx.cwd, current) || ".")}` : ""),
+							(current !== ctx.cwd
+								? `  ·  Δ ${displayPath(relative(ctx.cwd, current) || ".")}`
+								: ""),
 					),
 				),
 			);
@@ -551,7 +607,9 @@ async function browseDirectory(
 					),
 				),
 			);
-			container.addChild(new DynamicBorder((str: string) => theme.fg("accent", str)));
+			container.addChild(
+				new DynamicBorder((str: string) => theme.fg("accent", str)),
+			);
 
 			// silence unused
 			void rebuild;
@@ -646,7 +704,10 @@ async function changeCwd(
 	}
 
 	if (!nextFile) {
-		ctx.ui.notify("Could not create a session file for the target directory", "error");
+		ctx.ui.notify(
+			"Could not create a session file for the target directory",
+			"error",
+		);
 		return;
 	}
 
