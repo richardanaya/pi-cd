@@ -2,8 +2,8 @@
  * pi-cd — /cd command to change pi's working directory.
  *
  * Features:
- * - Path argument with directory autocomplete
- * - Interactive browser when invoked with no args
+ * - Path argument with directory autocomplete; create missing directories
+ * - Interactive browser with directory creation when invoked with no args
  * - Recent destinations + previous dir (`-`)
  * - Keep conversation (fork session into new cwd) or --new for a clean session
  *
@@ -242,8 +242,8 @@ function helpText(): string {
 	return [
 		"/cd — change pi working directory",
 		"",
-		"  /cd                  interactive browser",
-		"  /cd <path>           go there (keep conversation)",
+		"  /cd                  interactive browser (browse or create directories)",
+		"  /cd <path>           create if missing, then go there (keep conversation)",
 		"  /cd -n <path>        new session in path",
 		"  /cd --new <path>     same as -n",
 		"  /cd -                previous directory",
@@ -252,6 +252,7 @@ function helpText(): string {
 		"  /cd --recents        pick from recent destinations",
 		"  /cd --clear-recents  clear recent list",
 		"",
+		"Missing paths (including parents) are created automatically.",
 		"Tab-complete paths after /cd. History is forked into the new cwd by default.",
 	].join("\n");
 }
@@ -444,8 +445,50 @@ async function pickFromList(
 	});
 }
 
+async function createBrowserDirectory(
+	ctx: ExtensionCommandContext,
+	parent: string,
+): Promise<string | null> {
+	const input = await ctx.ui.input(
+		`Create directory in ${displayPath(parent)}`,
+		"New directory name",
+	);
+	if (input === undefined) return null;
+	const name = input.trim();
+	if (
+		!name ||
+		name === "." ||
+		name === ".." ||
+		isAbsolute(name) ||
+		name.includes(sep) ||
+		name.includes("/") ||
+		name.includes("\0")
+	) {
+		ctx.ui.notify(
+			"Enter a directory name, not a path (for example: new-project).",
+			"error",
+		);
+		return null;
+	}
+
+	const target = join(parent, name);
+	try {
+		// Non-recursive creation rejects existing names instead of silently reusing them.
+		mkdirSync(target);
+		ctx.ui.notify(`Created ${displayPath(target)}`, "info");
+		return safeRealpath(target);
+	} catch (e) {
+		ctx.ui.notify(
+			`Could not create ${displayPath(target)}: ${e instanceof Error ? e.message : String(e)}`,
+			"error",
+		);
+		return null;
+	}
+}
+
 type BrowserAction =
 	| { type: "cancel" }
+	| { type: "create" }
 	| { type: "choose"; path: string }
 	| { type: "navigate"; path: string };
 
@@ -466,6 +509,11 @@ async function browseDirectory(
 					value: "__use__",
 					label: `✓ Use this directory`,
 					description: displayPath(current),
+				},
+				{
+					value: "__create__",
+					label: "Create directory…",
+					description: "create here and open",
 				},
 				{ value: "__up__", label: "..", description: "parent" },
 			];
@@ -488,6 +536,11 @@ async function browseDirectory(
 			if (idx < 0) return null;
 			const item = entries[idx];
 			if (item.value === "__use__") return current;
+			if (item.value === "__create__") {
+				const created = await createBrowserDirectory(ctx, current);
+				if (created) current = created;
+				continue;
+			}
 			if (item.value === "__up__") {
 				current = dirname(current);
 				continue;
@@ -506,6 +559,11 @@ async function browseDirectory(
 						value: "__use__",
 						label: "✓ Use this directory",
 						description: displayPath(current),
+					},
+					{
+						value: "__create__",
+						label: "Create directory…",
+						description: "create here and open",
 					},
 				];
 				if (dirname(current) !== current) {
@@ -568,6 +626,10 @@ async function browseDirectory(
 					done({ type: "choose", path: current });
 					return;
 				}
+				if (item.value === "__create__") {
+					done({ type: "create" });
+					return;
+				}
 				if (item.value === "__up__") {
 					done({ type: "navigate", path: dirname(current) });
 					return;
@@ -603,7 +665,7 @@ async function browseDirectory(
 				new Text(
 					theme.fg(
 						"dim",
-						"↑↓ move · type filter · enter open/use · esc cancel",
+						"↑↓ move · type filter · enter select · esc cancel",
 					),
 				),
 			);
@@ -643,6 +705,11 @@ async function browseDirectory(
 		const action = await runRound();
 		if (action.type === "cancel") return null;
 		if (action.type === "choose") return action.path;
+		if (action.type === "create") {
+			const created = await createBrowserDirectory(ctx, current);
+			if (created) current = created;
+			continue;
+		}
 		// navigate
 		try {
 			assertDirectory(action.path);
@@ -657,11 +724,16 @@ async function changeCwd(
 	ctx: ExtensionCommandContext,
 	targetRaw: string,
 	fresh: boolean,
+	createMissing = false,
 ): Promise<void> {
 	let target: string;
 	try {
 		target = resolveTarget(ctx.cwd, targetRaw);
+		if (createMissing && !existsSync(target)) {
+			mkdirSync(target, { recursive: true });
+		}
 		assertDirectory(target);
+		target = safeRealpath(target);
 	} catch (e) {
 		ctx.ui.notify(e instanceof Error ? e.message : String(e), "error");
 		return;
@@ -817,7 +889,7 @@ export default function piCdExtension(pi: ExtensionAPI) {
 			}
 
 			if (parsed.kind === "go") {
-				await changeCwd(ctx, parsed.path, parsed.fresh);
+				await changeCwd(ctx, parsed.path, parsed.fresh, parsed.path !== "-");
 			}
 		},
 	});

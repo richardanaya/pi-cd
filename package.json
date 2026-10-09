@@ -13,6 +13,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "test": "node --test test/*.test.mjs",
     "prepublishOnly": "node --input-type=module -e \"import fs from 'node:fs'; fs.accessSync('index.ts')\""
   },
   "repository": {
